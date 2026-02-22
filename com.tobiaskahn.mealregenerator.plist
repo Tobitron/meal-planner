@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tobiaskahn.mealregenerator</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/tobiaskahn/code/meal-planner/meal_regenerator.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/tobiaskahn/code/meal-planner</string>
+
+    <!-- Run every 15 minutes (900 seconds) -->
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/tobiaskahn</string>
+        <key>PATH</key>
+        <string>/Users/tobiaskahn/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MEAL_PLANNER_GMAIL_APP_PASSWORD</key>
+        <string>oqul qrcc vctg qbus</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/tobiaskahn/code/meal-planner/logs/launchd_regenerator_stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/tobiaskahn/code/meal-planner/logs/launchd_regenerator_stderr.log</string>
+</dict>
+</plist>
