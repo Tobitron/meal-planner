@@ -59,8 +59,14 @@ def call_claude(prompt: str) -> dict:
     ]
 
     log.info("Calling Claude CLI...")
+    log.debug(f"Command: {' '.join(cmd)}")
 
+    stdout_chunks = []
     stderr_lines = []
+
+    def read_stdout(pipe):
+        stdout_chunks.append(pipe.read())
+        pipe.close()
 
     def stream_stderr(pipe):
         for line in iter(pipe.readline, ""):
@@ -79,18 +85,25 @@ def call_claude(prompt: str) -> dict:
         env=get_claude_env(),
     )
 
+    t_out = threading.Thread(target=read_stdout, args=(proc.stdout,), daemon=True)
     t_err = threading.Thread(target=stream_stderr, args=(proc.stderr,), daemon=True)
+    t_out.start()
     t_err.start()
 
     try:
-        stdout_text, _ = proc.communicate(timeout=CLAUDE_TIMEOUT_SECONDS)
+        proc.wait(timeout=CLAUDE_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         proc.kill()
+        t_out.join(timeout=5)
         t_err.join(timeout=5)
+        log.error(f"Claude CLI stdout before timeout: {(''.join(stdout_chunks))[:500]!r}")
         log.error(f"Claude CLI stderr before timeout: {' | '.join(stderr_lines)[:500]!r}")
         raise
 
-    t_err.join(timeout=5)
+    t_out.join()
+    t_err.join()
+
+    stdout_text = "".join(stdout_chunks)
 
     if proc.returncode != 0:
         raise RuntimeError(

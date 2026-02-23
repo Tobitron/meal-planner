@@ -23,7 +23,7 @@ from prompt_template import build_prompt
 LOG_DIR.mkdir(exist_ok=True)
 log_file = LOG_DIR / f"meal_planner_{datetime.now():%Y%m%d_%H%M%S}.log"
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(log_file),
@@ -69,6 +69,10 @@ def main() -> None:
         structured = call_claude(prompt)
         meals = structured.get("meals", [])
         log.info(f"Claude returned {len(meals)} meals")
+
+        if not meals:
+            import json as _json
+            log.error(f"Empty meals in structured output: {_json.dumps(structured, indent=2)[:2000]}")
 
         # 5. Validate
         meals = validate_meals(meals)
