@@ -16,7 +16,6 @@ from config import (
     NUM_NOTION_MEALS,
     NUM_WEB_MEALS,
 )
-from prompt_template import JSON_SCHEMA
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +49,6 @@ def call_claude(prompt: str) -> dict:
         str(CLAUDE_BIN),
         "-p",
         "--output-format", "json",
-        "--json-schema", json.dumps(JSON_SCHEMA),
         "--permission-mode", "bypassPermissions",
         "--no-session-persistence",
         "--max-budget-usd", CLAUDE_MAX_BUDGET_USD,

@@ -8,7 +8,6 @@ from config import NUM_MEALS, NUM_NOTION_MEALS, NUM_WEB_MEALS
 NOTION_SOURCES = {
     "Meal Prep Options Table": "https://www.notion.so/7eecd65aebe2482d9993f0d9ba8482cb",
     "Dense Bean Salads": "https://www.notion.so/474472b92e9f425484729fcee54b4e2c",
-    "Toby Soylent": "https://www.notion.so/29d302009a8380b5a160f96ac1045b44",
 }
 
 # ============================================================================
@@ -19,13 +18,12 @@ You are a weekly meal prep planner. Search my Notion workspace for recipes and \
 select {num_meals} meals for the upcoming week.
 
 ## Sources
-Search these three Notion pages for recipes:
+Search these two Notion pages for recipes:
 1. "Meal Prep Options Table" (database) - Only select recipes where "Is it good?" is "Yes" or "TBD". Do NOT select recipes where "Is it good?" is "No".
 2. "Dense Bean Salads" (page with subpages) - Each subpage is a recipe.
-3. "Toby Soylent" (page) - Contains meal ideas and notes.
 
 ## Meal Split
-- {num_notion} meals from Notion (from any of the three sources above)
+- {num_notion} meals from Notion (from either of the two sources above)
 - {num_web} meal from a web search (find a recipe online that fits all the rules below)
 
 ## Diet Rules (Mediterranean Diet)
@@ -55,10 +53,16 @@ Prioritize meals that:
 - Use frozen or pre-cut vegetables when practical
 
 ## Output
-For each selected meal, return:
-- The exact recipe name
-- Whether it came from Notion or web search
-- The Notion URL (for Notion recipes) or the source URL (for web recipes)
+Respond with ONLY a JSON object in this exact format, no other text:
+{
+  "meals": [
+    {
+      "recipe_name": "exact recipe name",
+      "source": "notion" or "web",
+      "url": "notion page URL or web recipe URL"
+    }
+  ]
+}
 """
 
 # JSON schema for Claude CLI --json-schema structured output
