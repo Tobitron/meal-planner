@@ -17,10 +17,11 @@ EXCLUSION_WEEKS = 6
 # Claude CLI settings
 CLAUDE_TIMEOUT_SECONDS = 900  # 15 minutes for Notion search + web search
 CLAUDE_MAX_BUDGET_USD = "1.00"
+CLAUDE_MCP_CONFIG = PROJECT_DIR / "mcp_config.json"
 
 # Email settings
 GMAIL_SENDER = "tobykahn@gmail.com"
-GMAIL_RECIPIENTS = ["tobiasbkahn@gmail.com", "mindynichamin@gmail.com"]
+GMAIL_RECIPIENTS = ["tobiasbkahn@gmail.com"]
 GMAIL_APP_PASSWORD_ENV = "MEAL_PLANNER_GMAIL_APP_PASSWORD"
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
