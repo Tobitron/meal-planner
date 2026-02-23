@@ -4,11 +4,13 @@ import json
 import logging
 import os
 import subprocess
+import threading
 from pathlib import Path
 
 from config import (
     CLAUDE_BIN,
     CLAUDE_MAX_BUDGET_USD,
+    CLAUDE_MCP_CONFIG,
     CLAUDE_TIMEOUT_SECONDS,
     NUM_MEALS,
     NUM_NOTION_MEALS,
@@ -37,6 +39,8 @@ def get_claude_env() -> dict:
         if p not in existing:
             existing.insert(0, p)
     env["PATH"] = ":".join(existing)
+    # Remove CLAUDECODE env var so the subprocess doesn't think it's nested
+    env.pop("CLAUDECODE", None)
     return env
 
 
@@ -50,35 +54,51 @@ def call_claude(prompt: str) -> dict:
         "--permission-mode", "bypassPermissions",
         "--no-session-persistence",
         "--max-budget-usd", CLAUDE_MAX_BUDGET_USD,
+        "--mcp-config", str(CLAUDE_MCP_CONFIG),
         prompt,
     ]
 
     log.info("Calling Claude CLI...")
+
+    stderr_lines = []
+
+    def stream_stderr(pipe):
+        for line in iter(pipe.readline, ""):
+            line = line.rstrip()
+            if line:
+                log.info(f"[claude] {line}")
+                stderr_lines.append(line)
+        pipe.close()
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
+        text=True,
+        env=get_claude_env(),
+    )
+
+    t_err = threading.Thread(target=stream_stderr, args=(proc.stderr,), daemon=True)
+    t_err.start()
+
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=CLAUDE_TIMEOUT_SECONDS,
-            env=get_claude_env(),
-        )
-    except subprocess.TimeoutExpired as e:
-        stdout_snippet = (e.stdout or b"").decode(errors="replace")[:500]
-        stderr_snippet = (e.stderr or b"").decode(errors="replace")[:500]
-        log.error(f"Claude CLI stdout before timeout: {stdout_snippet!r}")
-        log.error(f"Claude CLI stderr before timeout: {stderr_snippet!r}")
+        stdout_text, _ = proc.communicate(timeout=CLAUDE_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        t_err.join(timeout=5)
+        log.error(f"Claude CLI stderr before timeout: {' | '.join(stderr_lines)[:500]!r}")
         raise
 
-    if result.stderr.strip():
-        log.warning(f"Claude CLI stderr: {result.stderr[:500]}")
+    t_err.join(timeout=5)
 
-    if result.returncode != 0:
+    if proc.returncode != 0:
         raise RuntimeError(
-            f"Claude CLI exited with code {result.returncode}\n"
-            f"stderr: {result.stderr[:500]}"
+            f"Claude CLI exited with code {proc.returncode}\n"
+            f"stderr: {' '.join(stderr_lines)[:500]}"
         )
 
-    response = json.loads(result.stdout)
+    response = json.loads(stdout_text)
 
     # Claude CLI >=2.1 moved structured output under the "result" key
     structured = response.get("structured_output")
